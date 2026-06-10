@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Health Score — Concept Demo</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #121a23;
+    --panel-2: #182230;
+    --line: #233143;
+    --text: #e8eef4;
+    --muted: #8a98a8;
+    --green: #22e07a;
+    --amber: #f5b82e;
+    --red: #f4564e;
+    --blue: #4da3ff;
+    --purple: #b48cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 26px; }
+  .title h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.2px; }
+  .title .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .badge-demo {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--muted);
+    font-size: 12px; padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+  }
+  .badge-demo b { color: var(--green); font-weight: 600; }
+
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .kpi .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .kpi .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .kpi .note { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .kpi .value.green { color: var(--green); }
+  .kpi .value.amber { color: var(--amber); }
+  .kpi .value.red { color: var(--red); }
+  .kpi.clickable { cursor: pointer; transition: border-color 0.15s; }
+  .kpi.clickable:hover { border-color: #3a4f6b; }
+  .kpi .go { font-size: 11px; color: var(--blue); margin-top: 3px; }
+
+  /* CSV import */
+  .drop-zone {
+    border: 2px dashed var(--line); border-radius: 12px; padding: 34px 20px; text-align: center;
+    color: var(--muted); font-size: 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    margin: 14px 0;
+  }
+  .drop-zone:hover, .drop-zone.drag { border-color: var(--green); background: rgba(34,224,122,0.05); color: var(--text); }
+  .drop-zone b { color: var(--text); }
+  .privacy-note {
+    background: rgba(34,224,122,0.07); border: 1px solid rgba(34,224,122,0.25); border-radius: 10px;
+    padding: 10px 14px; font-size: 13px; margin-bottom: 6px;
+  }
+  .map-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; }
+  .map-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  .map-table td:first-child { color: var(--text); white-space: nowrap; }
+  .map-table select { width: 100%; max-width: 260px; }
+  .map-table .req { color: var(--red); }
+  .import-banner {
+    background: rgba(77,163,255,0.07); border: 1px solid rgba(77,163,255,0.3); border-radius: 10px;
+    padding: 10px 16px; font-size: 13px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .import-banner .restore { color: var(--blue); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; background: none; border: none; font-family: inherit; font-size: 13px; }
+
+  /* standalone customer plan page (#plan=…) */
+  .cust-banner { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; font-size: 13px; color: var(--muted); margin-bottom: 22px; display: flex; gap: 10px; align-items: center; }
+  .cust-banner .dot-live { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .cust-footer { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .plan-head h2 { font-size: 20px; margin-bottom: 0; }
+
+  /* Trigger feed */
+  .trigger-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 18px; overflow: hidden; }
+  .trigger-head { display: flex; align-items: center; gap: 10px; padding: 13px 18px; cursor: pointer; user-select: none; }
+  .trigger-head h2 { font-size: 14px; font-weight: 600; }
+  .trigger-head .count { background: rgba(244,86,78,0.15); color: var(--red); font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 9px; }
+  .trigger-head .hint { color: var(--muted); font-size: 12px; margin-left: auto; }
+  .trigger-body { border-top: 1px solid var(--line); display: none; }
+  .trigger-body.open { display: block; }
+  .trig { display: flex; gap: 12px; padding: 11px 18px; border-bottom: 1px solid var(--line); font-size: 13.5px; align-items: baseline; flex-wrap: wrap; }
+  .trig:last-child { border-bottom: none; }
+  .trig .dot { font-size: 11px; }
+  .trig .rule { font-weight: 600; min-width: 150px; }
+  .trig .acct { color: var(--blue); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .trig .what { color: var(--muted); flex: 1; min-width: 200px; }
+  .trig .to { display: flex; gap: 5px; }
+  .pill { font-size: 11px; border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px; padding: 1px 9px; color: var(--text); white-space: nowrap; }
+  .pill.vp { border-color: rgba(180,140,255,0.4); color: var(--purple); }
+  .pill.auto { border-color: rgba(77,163,255,0.4); color: var(--blue); }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filters button {
+    background: var(--panel); color: var(--muted); border: 1px solid var(--line);
+    padding: 7px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .filters button.active { color: var(--text); border-color: var(--green); background: rgba(34,224,122,0.08); }
+  select, textarea {
+    background: var(--panel); color: var(--text); border: 1px solid var(--line);
+    padding: 7px 12px; border-radius: 8px; font-size: 13px; font-family: inherit;
+  }
+  .controls .spacer { flex: 1; }
+  .methodology-link {
+    color: var(--blue); font-size: 13px; cursor: pointer; background: none; border: none;
+    font-family: inherit; text-decoration: underline; text-underline-offset: 3px;
+  }
+
+  .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .account {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 18px; cursor: pointer; transition: border-color 0.15s;
+    display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr 1fr auto; gap: 14px; align-items: center;
+  }
+  .account:hover { border-color: #3a4f6b; }
+  .account .name { font-weight: 600; }
+  .account .type { color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+  .cell .cl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .cell .cv { font-size: 14px; margin-top: 1px; font-variant-numeric: tabular-nums; }
+  .trend-up { color: var(--green); }
+  .trend-down { color: var(--red); }
+  .trend-flat { color: var(--muted); }
+  .stage-tag { font-size: 10.5px; color: var(--blue); border: 1px solid rgba(77,163,255,0.35); border-radius: 4px; padding: 0 5px; margin-left: 6px; }
+  .override-tag { font-size: 10.5px; color: var(--red); border: 1px solid rgba(244,86,78,0.45); border-radius: 4px; padding: 0 5px; margin-left: 6px; font-weight: 600; }
+  .score-pill {
+    min-width: 64px; text-align: center; font-weight: 700; font-size: 16px;
+    padding: 8px 0; border-radius: 10px; font-variant-numeric: tabular-nums;
+  }
+  .score-pill .band { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 1px; }
+  .s-healthy { background: rgba(34,224,122,0.12); color: var(--green); }
+  .s-watch   { background: rgba(245,184,46,0.12); color: var(--amber); }
+  .s-risk    { background: rgba(244,86,78,0.12); color: var(--red); }
+
+  /* Drawer */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10; }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; top: 0; right: -580px; width: 560px; max-width: 94vw; height: 100vh;
+    background: var(--panel); border-left: 1px solid var(--line); z-index: 11;
+    transition: right 0.25s ease; overflow-y: auto; padding: 26px 26px 40px;
+  }
+  .drawer.open { right: 0; }
+  .drawer .close { position: absolute; top: 18px; right: 20px; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; }
+  .drawer h2 { font-size: 19px; margin-bottom: 2px; padding-right: 30px; }
+  .drawer .dtype { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .dscore { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .dscore .big { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .dscore .meta { font-size: 13px; color: var(--muted); }
+  .dbuttons { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .dbtn {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+    font-size: 13px; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-family: inherit;
+  }
+  .dbtn:hover { border-color: var(--blue); }
+  .dbtn.danger { border-color: rgba(244,86,78,0.4); color: var(--red); }
+  .dbtn.subtle { color: var(--muted); }
+  .dbtn:disabled { opacity: 0.8; cursor: default; }
+  .dsection { margin-bottom: 22px; }
+  .dsection h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 10px; }
+  .comp { margin-bottom: 10px; }
+  .comp .crow { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .comp .crow .cname { color: var(--text); }
+  .comp .crow .cpts { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 3px; }
+  .flag, .opp, .action, .sig, .trigrow { display: flex; gap: 9px; font-size: 13.5px; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; align-items: baseline; }
+  .flag { background: rgba(244,86,78,0.08); border: 1px solid rgba(244,86,78,0.25); }
+  .flag::before { content: "⚠"; color: var(--red); }
+  .flag.soft { background: rgba(245,184,46,0.07); border: 1px solid rgba(245,184,46,0.25); }
+  .flag.soft::before { content: "◷"; color: var(--amber); }
+  .opp { background: rgba(34,224,122,0.07); border: 1px solid rgba(34,224,122,0.22); }
+  .opp::before { content: "↗"; color: var(--green); }
+  .action { background: var(--panel-2); border: 1px solid var(--line); }
+  .action::before { content: "→"; color: var(--blue); }
+  .sig { background: var(--panel-2); border: 1px solid var(--line); flex-direction: column; gap: 3px; }
+  .sig .sigtop { display: flex; gap: 8px; align-items: baseline; width: 100%; }
+  .sig .src { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .sig .src.gong { color: var(--purple); } .sig .src.email { color: var(--blue); } .sig .src.slack { color: var(--amber); } .sig .src.csm { color: var(--green); }
+  .sig .when { color: var(--muted); font-size: 11.5px; margin-left: auto; }
+  .sig .stext { font-size: 13px; }
+  .sig.neg { border-color: rgba(244,86,78,0.35); }
+  .sig.pos { border-color: rgba(34,224,122,0.3); }
+  .trigrow { background: var(--panel-2); border: 1px solid var(--line); flex-wrap: wrap; }
+  .trigrow::before { content: "⚡"; color: var(--amber); }
+  .goal { margin-bottom: 12px; }
+  .goal .grow { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; gap: 10px; }
+  .goal .gname { color: var(--text); }
+  .goal .gnums { color: var(--muted); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  /* sentiment — clickable */
+  .sentiment-row { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+  .sentiment-row .slabel { font-size: 13px; color: var(--muted); margin-right: 4px; }
+  .sdot { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2); display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; transition: transform 0.1s; }
+  .sdot:hover { transform: scale(1.15); border-color: var(--blue); }
+  .sdot.on3 { background: rgba(245,184,46,0.2); border-color: var(--amber); }
+  .sdot.on1, .sdot.on2 { background: rgba(244,86,78,0.2); border-color: var(--red); }
+  .sdot.on4, .sdot.on5 { background: rgba(34,224,122,0.18); border-color: var(--green); }
+  .shint { font-size: 11.5px; color: var(--muted); margin-bottom: 10px; }
+
+  /* escalation card & form */
+  .esc-card { background: rgba(244,86,78,0.07); border: 1px solid rgba(244,86,78,0.35); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+  .esc-card .erow { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; margin-bottom: 6px; }
+  .esc-card .ereason { font-weight: 700; color: var(--red); font-size: 14px; }
+  .esc-card .ewhen { color: var(--muted); font-size: 12px; margin-left: auto; }
+  .esc-card .enote { font-size: 13px; margin-bottom: 8px; }
+  .esc-card .emeta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .esc-card .emeta .em { background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; }
+  .esc-card .emeta .el { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .esc-card .emeta .ev { font-size: 13px; margin-top: 1px; }
+  .esc-stages { display: flex; align-items: center; gap: 0; margin-bottom: 10px; }
+  .esc-stage { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+  .esc-stage .sd { width: 10px; height: 10px; border-radius: 50%; background: var(--panel-2); border: 1px solid var(--line); }
+  .esc-stage.donee .sd { background: var(--red); border-color: var(--red); }
+  .esc-stage.activee { color: var(--text); font-weight: 600; }
+  .esc-stage.activee .sd { background: var(--amber); border-color: var(--amber); }
+  .esc-connector { flex: 0 0 24px; height: 1px; background: var(--line); margin: 0 6px; }
+  .esc-ownership { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .esc-form { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; display: grid; gap: 8px; }
+  .esc-form label { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .esc-form select, .esc-form textarea { width: 100%; }
+  .esc-form textarea { resize: vertical; min-height: 56px; }
+
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fact { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .fact .fl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .fact .fv { font-size: 14px; margin-top: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; font-size: 12px; padding: 3px 10px; color: var(--text); }
+
+  /* Modals */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 20; padding: 20px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; max-width: 700px; width: 100%; max-height: 86vh; overflow-y: auto; padding: 28px; position: relative; }
+  .modal .close { position: absolute; top: 14px; right: 18px; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; z-index: 2; }
+  .modal h2 { font-size: 18px; margin-bottom: 14px; padding-right: 28px; }
+  .modal p { font-size: 14px; color: var(--text); margin-bottom: 12px; }
+  .modal p.m { color: var(--muted); font-size: 13px; }
+  .modal table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+  .modal th, .modal td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .modal th { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .modal td.w { white-space: nowrap; color: var(--green); font-weight: 600; }
+  .status-chip { font-size: 11px; border-radius: 999px; padding: 2px 10px; font-weight: 600; white-space: nowrap; }
+  .st-done { background: rgba(34,224,122,0.12); color: var(--green); }
+  .st-prog { background: rgba(77,163,255,0.12); color: var(--blue); }
+  .st-up   { background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+  .st-late { background: rgba(244,86,78,0.12); color: var(--red); }
+  .report-meta { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: var(--muted); margin-bottom: 16px; }
+  .report-meta b { color: var(--text); font-weight: 600; }
+  .progress-line { display: flex; align-items: center; gap: 12px; margin: 14px 0; }
+  .progress-line .bar { flex: 1; height: 10px; border-radius: 5px; }
+  .progress-line .pct { font-weight: 700; font-size: 16px; white-space: nowrap; }
+  .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 4px; }
+
+  /* customer plan — visual */
+  .plan-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; padding-right: 28px; }
+  .logo { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; color: #0b0f14; flex-shrink: 0; letter-spacing: -0.5px; }
+  .plan-head .pt h2 { margin-bottom: 0; }
+  .plan-head .pt .psub { color: var(--muted); font-size: 12.5px; }
+  .cust-badge { margin-left: auto; font-size: 11px; border: 1px solid rgba(34,224,122,0.4); color: var(--green); border-radius: 999px; padding: 3px 11px; white-space: nowrap; }
+  .goal-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin: 14px 0; }
+  .goal-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .goal-card .gc-name { font-size: 12px; color: var(--muted); }
+  .goal-card .gc-val { font-size: 14px; font-weight: 600; margin-top: 3px; }
+  .tl-phase { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 8px; }
+  .tl-phase .ph { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; }
+  .tl-phase .ph-count { font-size: 11.5px; color: var(--muted); }
+  .tl-rows { border-left: 2px solid var(--line); margin-left: 7px; padding-left: 0; }
+  .tl-row { display: flex; gap: 12px; align-items: baseline; padding: 7px 0 7px 16px; position: relative; font-size: 13.5px; flex-wrap: wrap; }
+  .tl-row .tl-dot { position: absolute; left: -8px; top: 11px; width: 14px; height: 14px; border-radius: 50%; background: var(--panel); border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 8px; }
+  .tl-row.done .tl-dot { background: var(--green); border-color: var(--green); color: #0b0f14; }
+  .tl-row.prog .tl-dot { background: var(--blue); border-color: var(--blue); }
+  .tl-row.late .tl-dot { background: var(--red); border-color: var(--red); }
+  .tl-row .tl-name { flex: 1; min-width: 200px; }
+  .tl-row.done .tl-name { color: var(--muted); }
+  .tl-row .tl-owner { font-size: 11px; border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px; padding: 1px 9px; color: var(--muted); }
+  .tl-row .tl-owner.cust { border-color: rgba(245,184,46,0.4); color: var(--amber); }
+  .tl-row .tl-date { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 56px; }
+
+  footer { margin-top: 36px; color: var(--muted); font-size: 12.5px; text-align: center; }
+
+  @media (max-width: 980px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 860px) {
+    .account { grid-template-columns: 1fr auto; }
+    .account .cell { display: none; }
+    .account .cell.always { display: block; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <h1>Portfolio Health Score</h1>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="label">Portfolio ARR</div><div class="value" id="kpi-arr">—</div><div class="note" id="kpi-accounts">—</div></div>
+    <div class="kpi"><div class="label">ARR-Weighted Health</div><div class="value" id="kpi-health">—</div><div class="note">weighted by account ARR</div></div>
+    <div class="kpi clickable" id="kpi-card-renewals"><div class="label">Renewals Next 120d</div><div class="value" id="kpi-renewals">—</div><div class="note" id="kpi-renewals-note">—</div><div class="go">view accounts →</div></div>
+    <div class="kpi clickable" id="kpi-card-risk"><div class="label">Accounts At Risk</div><div class="value red" id="kpi-risk">—</div><div class="note" id="kpi-risk-note">—</div><div class="go">view accounts →</div></div>
+    <div class="kpi clickable" id="kpi-card-esc"><div class="label">Open Escalations</div><div class="value" id="kpi-esc">—</div><div class="note">force score override</div><div class="go">view accounts →</div></div>
+  </div>
+
+  <div class="trigger-panel">
+    <div class="trigger-head" id="trigger-head">
+      <h2>⚡ Automated triggers — last 7 days</h2>
+      <span class="count" id="trigger-count">0</span>
+      <span class="hint">rule-based alerts to CSM &amp; VP via Slack + email · click to expand</span>
+    </div>
+    <div class="trigger-body" id="trigger-body"></div>
+  </div>
+
+  <div class="controls">
+    <div class="filters" id="filters">
+      <button data-f="all" class="active">All</button>
+      <button data-f="healthy">Healthy</button>
+      <button data-f="watch">Watch</button>
+      <button data-f="risk">At Risk</button>
+      <button data-f="renewal120">Renewing ≤120d</button>
+      <button data-f="escalated">Escalated</button>
+      <button data-f="onboarding">Onboarding</button>
+    </div>
+    <select id="sort">
+      <option value="score-asc">Sort: score (lowest first)</option>
+      <option value="score-desc">Sort: score (highest first)</option>
+      <option value="arr-desc">Sort: ARR (largest first)</option>
+      <option value="renewal-asc">Sort: renewal (soonest first)</option>
+    </select>
+    <div class="spacer"></div>
+    <button class="dbtn" id="open-import">📥 Import your data (CSV)</button>
+    <button class="methodology-link" id="open-method">Why these signals? — model rationale</button>
+  </div>
+
+  <div class="import-banner" id="import-banner" style="display:none"></div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    Scores computed live from underlying inputs (see model rationale) — nothing here is hardcoded.<br>
+    Sentiment and escalations are editable in this demo; changes recalculate scores instantly (and reset on reload).<br>
+    All accounts and data are fictional. Concept by Ilya Kiselev, June 2026.
+  </footer>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="drawer" id="drawer"></div>
+
+<div class="modal-bg" id="modal-bg"><div class="modal" id="modal-content"></div></div>
+
+<script>
+const TODAY = new Date("2026-06-11");
+
+const ESC_REASONS = ["Executive complaint", "Support / SLA breach", "Champion departure", "Product blocker", "Data / migration issue", "Renewal risk", "Billing dispute"];
+const ESC_OWNERS = ["CSM (me)", "VP Customer Success", "Solutions Engineering", "Support Lead"];
+const ESC_STAGES = ["Open — response due in 24h", "Action plan agreed", "Monitoring recovery"];
+
+const accounts = [
+  {
+    name: "Continental Hockey League", type: "League", stage: "Steady state", arr: 340000,
+    renewal: "2026-11-15", seats: 120, wau: 96,
+    integrations: ["Premiere Pro", "Live ingest", "Social publishing", "Stats feed"],
+    milestonesOnTime: 1.0, trend30: 9,    champion: "engaged", lastQBR: 34, upsellDuringImpl: true,
+    csmSentiment: 5, escalation: null, atRiskRenewal: false, accent: "#7fd4ff",
+    commSignals: [
+      { source: "Gong", polarity: 1, when: "6d ago", text: "QBR call: VP of Content called platform “central to our matchday operation”; asked about club-level rollout pricing." }
+    ],
+    goals: [
+      { name: "Post-game gallery delivered to clubs", baseline: "4 hrs", target: "30 min", pct: 0.93, current: "45 min" },
+      { name: "Club content requests self-served via portals", baseline: "0%", target: "80%", pct: 0.81, current: "65%" }
+    ],
+    expansion: ["12 member clubs not yet on platform — ecosystem rollout opportunity", "International feeds — localization (subtitles/dubbing) for EU broadcast partners"],
+    notes: "Hybrid setup: on-prem NAS at arena synced to cloud via agent for game nights."
+  },
+  {
+    name: "Motor Speed Championship", type: "Competition", stage: "Steady state", arr: 400000,
+    renewal: "2027-02-01", seats: 85, wau: 71,
+    integrations: ["FTP ingest", "Social publishing", "Cloud storage (BYO)"],
+    milestonesOnTime: 0.9, trend30: 4,    champion: "engaged", lastQBR: 55, upsellDuringImpl: true,
+    csmSentiment: 4, escalation: null, atRiskRenewal: false, accent: "#ff8a5c",
+    commSignals: [
+      { source: "Email", polarity: 1, when: "12d ago", text: "Digital director shared internal stat: race-weekend photo turnaround down 70% season over season." }
+    ],
+    goals: [
+      { name: "Search-to-download time for race assets", baseline: "20 min", target: "2 min", pct: 0.78, current: "6 min" }
+    ],
+    expansion: ["Photos only today — 1.2M images, zero video. Archive digitization → video tier upsell", "Race-weekend live clipping workflow not yet activated"],
+    notes: "Largest account by ARR. Photo workflows deeply adopted; video is the whitespace."
+  },
+  {
+    name: "US Collegiate Athletics Consortium", type: "Federation", stage: "Onboarding", arr: 290000,
+    renewal: "2026-09-30", seats: 200, wau: 62,
+    integrations: ["Social publishing"],
+    milestonesOnTime: 0.55, trend30: -31,    champion: "vacant", lastQBR: 140, upsellDuringImpl: false,
+    csmSentiment: 2, accent: "#e0a422",
+    escalation: {
+      open: true, reason: "Executive complaint", opened: "9d ago", stageIdx: 1,
+      owner: "VP Customer Success",
+      note: "Exec sponsor emailed VP directly: rollout “stalled with no internal owner” since champion departed.",
+      nextStep: "Joint recovery call Thursday — CSM + VP CS + exec sponsor; recovery plan with named owner and dates."
+    },
+    atRiskRenewal: false,
+    commSignals: [
+      { source: "Email", polarity: -1, when: "9d ago", text: "Exec sponsor escalation: “We’ve lost momentum since Dana left — schools are asking why they should bother uploading.”" },
+      { source: "Slack", polarity: -1, when: "16d ago", text: "Shared channel quiet 16 days; last message from member school went unanswered on their side." }
+    ],
+    goals: [
+      { name: "Member schools actively contributing content", baseline: "0 of 40", target: "40", pct: 0.28, current: "11 of 40" }
+    ],
+    expansion: ["40+ member schools licensed but only 11 actively posting content"],
+    notes: "Champion departed in April; onboarding stalled at metadata schema rollout.",
+    onboarding: {
+      progress: 0.45, status: "Behind plan", kickoff: "2026-02-10", targetGoLive: "2026-07-15",
+      plan: [
+        { phase: "Analysis", milestone: "Kickoff & media-stack audit", owner: "Joint", target: "Feb 14", status: "done" },
+        { phase: "Analysis", milestone: "Success plan & business outcomes agreed", owner: "Joint", target: "Feb 21", status: "done" },
+        { phase: "Implementation", milestone: "Archive migration (wave 1 — 180K assets)", owner: "ScorePlay", target: "Mar 20", status: "done" },
+        { phase: "Implementation", milestone: "Metadata schema sign-off (40 schools)", owner: "Customer", target: "Apr 10", status: "late" },
+        { phase: "Implementation", milestone: "School-level workspace configuration", owner: "ScorePlay", target: "May 1", status: "late" },
+        { phase: "Fine-tuning", milestone: "Train-the-trainer: school media leads", owner: "Joint", target: "Jun 5", status: "up" },
+        { phase: "Fine-tuning", milestone: "Athlete distribution portal launch", owner: "ScorePlay", target: "Jun 26", status: "up" },
+        { phase: "Go live", milestone: "Full go-live — fall season ready", owner: "Joint", target: "Jul 15", status: "up" }
+      ]
+    }
+  },
+  {
+    name: "Pacific Surf League", type: "League", stage: "Onboarding", arr: 230000,
+    renewal: "2027-04-30", seats: 50, wau: 31,
+    integrations: ["FTP ingest", "Social publishing", "Live ingest"],
+    milestonesOnTime: 1.0, trend30: 22,    champion: "engaged", lastQBR: 18, upsellDuringImpl: true,
+    csmSentiment: 5, escalation: null, atRiskRenewal: false, accent: "#2ec5d3",
+    commSignals: [
+      { source: "Gong", polarity: 1, when: "4d ago", text: "Midway review call: champion demoed platform to CMO unprompted; asked to add athlete portal to scope (closed as expansion)." },
+      { source: "Slack", polarity: 1, when: "2d ago", text: "Media team sharing event galleries in shared channel; 3 staff asked for advanced search training." }
+    ],
+    goals: [
+      { name: "Event highlights published to social", baseline: "next day", target: "< 1 hr", pct: 0.55, current: "3 hrs" },
+      { name: "Athlete content requests handled via portal", baseline: "manual (email)", target: "100% self-serve", pct: 0.4, current: "pilot live" }
+    ],
+    expansion: ["Athlete distribution portal added mid-onboarding (+$28K) — closed", "Broadcast partner portal in discussion for season 2"],
+    notes: "Onboarding at 52% — on track, expanded during implementation. Strongest early-adoption curve in the portfolio.",
+    onboarding: {
+      progress: 0.52, status: "On track", kickoff: "2026-04-20", targetGoLive: "2026-08-01",
+      plan: [
+        { phase: "Analysis", milestone: "Kickoff & media-stack audit", owner: "Joint", target: "Apr 24", status: "done" },
+        { phase: "Analysis", milestone: "Success plan & business outcomes agreed", owner: "Joint", target: "May 1", status: "done" },
+        { phase: "Pilot", milestone: "Pilot event: 2 live events ingested & tagged", owner: "ScorePlay", target: "May 15", status: "done" },
+        { phase: "Implementation", milestone: "Archive migration (90K assets)", owner: "ScorePlay", target: "Jun 6", status: "done" },
+        { phase: "Implementation", milestone: "Athlete portal configuration (expansion)", owner: "ScorePlay", target: "Jun 24", status: "prog" },
+        { phase: "Fine-tuning", milestone: "Media team training (2 cohorts)", owner: "Joint", target: "Jul 8", status: "up" },
+        { phase: "Fine-tuning", milestone: "Live clipping workflow rehearsal", owner: "Joint", target: "Jul 18", status: "up" },
+        { phase: "Go live", milestone: "Season go-live", owner: "Joint", target: "Aug 1", status: "up" }
+      ]
+    }
+  },
+  {
+    name: "National Soccer Coalition", type: "Federation", stage: "Steady state", arr: 310000,
+    renewal: "2026-10-20", seats: 140, wau: 98,
+    integrations: ["Premiere Pro", "Social publishing"],
+    milestonesOnTime: 0.85, trend30: -6,    champion: "transitioning", lastQBR: 130, upsellDuringImpl: false,
+    csmSentiment: 3, escalation: null, atRiskRenewal: false, accent: "#9be07a",
+    commSignals: [
+      { source: "Gong", polarity: -1, when: "21d ago", text: "Intro call with incoming VP of Content: asked which of their five media tools “actually earn their renewal” — consolidation review likely." }
+    ],
+    goals: [
+      { name: "National team content reuse by regional staff", baseline: "12%", target: "60%", pct: 0.5, current: "36%" }
+    ],
+    expansion: ["Women's league launching 2027 — separate media operation, net-new workspace", "Spanish-language content workflow — localization opportunity"],
+    notes: "Healthy usage but exec relationship has gone quiet. New VP of Content started May."
+  },
+  {
+    name: "North American Rugby Alliance", type: "League", stage: "Steady state", arr: 210000,
+    renewal: "2026-12-05", seats: 60, wau: 41,
+    integrations: ["FTP ingest", "Live ingest"],
+    milestonesOnTime: 0.75, trend30: -12,    champion: "transitioning", lastQBR: 80, upsellDuringImpl: false,
+    csmSentiment: 3, escalation: null, atRiskRenewal: false, accent: "#c5a6ff",
+    commSignals: [
+      { source: "Slack", polarity: -1, when: "8d ago", text: "Champion in shared channel: “covering two roles right now, tagging will have to wait until after playoffs.”" }
+    ],
+    goals: [
+      { name: "Matchday photo delivery to clubs", baseline: "next morning", target: "same night", pct: 0.6, current: "by 11pm" }
+    ],
+    expansion: ["Broadcast partner asking for direct portal access — distribution expansion"],
+    notes: "Usage dipping while media manager covers two roles since March — workload, not disengagement, but the effect is the same."
+  },
+  {
+    name: "Summit Winter Games Organization", type: "Competition", stage: "Steady state", arr: 260000,
+    renewal: "2027-01-10", seats: 150, wau: 84,
+    integrations: ["Live ingest", "Broadcast transcode", "Cloud storage (BYO)", "Premiere Pro"],
+    milestonesOnTime: 0.95, trend30: -7,
+    champion: "engaged", lastQBR: 42, upsellDuringImpl: true,
+    csmSentiment: 4, escalation: null, atRiskRenewal: false, accent: "#8fd9ff",
+    commSignals: [
+      { source: "Email", polarity: 1, when: "30d ago", text: "Post-season debrief: “best media ops cycle we’ve had”; planning summer test events on platform." }
+    ],
+    goals: [
+      { name: "Accredited media asset requests fulfilled", baseline: "48 hrs", target: "instant (portal)", pct: 0.9, current: "97% via portal" }
+    ],
+    expansion: ["Summer test events — year-round usage case to build before renewal"],
+    notes: "Event-based org running year-round campaign work between Games cycles; slight dip as the post-Games content wave settles."
+  },
+  {
+    name: "Eastern Basketball Federation", type: "Federation", stage: "Steady state", arr: 240000,
+    renewal: "2026-08-15", seats: 90, wau: 58,
+    integrations: ["Social publishing", "Stats feed"],
+    milestonesOnTime: 0.7, trend30: 2,    champion: "engaged", lastQBR: 95, upsellDuringImpl: false,
+    csmSentiment: 3, escalation: null, atRiskRenewal: false, accent: "#ffb35c",
+    commSignals: [],
+    goals: [
+      { name: "Player content delivered for social amplification", baseline: "WeTransfer, weekly", target: "portal, same day", pct: 0.15, current: "portal unused" }
+    ],
+    expansion: ["Player-distribution portal unused — athletes still getting content via WeTransfer"],
+    notes: "Renewal in 65 days with a flat-engagement profile. Needs an executive touchpoint before paper goes out."
+  },
+  {
+    name: "Premier Lacrosse Circuit", type: "League", stage: "Steady state", arr: 185000,
+    renewal: "2027-03-01", seats: 45, wau: 41,
+    integrations: ["Premiere Pro", "Social publishing", "FTP ingest"],
+    milestonesOnTime: 1.0, trend30: 14,    champion: "engaged", lastQBR: 21, upsellDuringImpl: true,
+    csmSentiment: 5, escalation: null, atRiskRenewal: false, accent: "#7affc4",
+    commSignals: [
+      { source: "Gong", polarity: 1, when: "10d ago", text: "Champion presenting platform at league all-hands; volunteered as reference for two prospects." }
+    ],
+    goals: [
+      { name: "Weekly highlight package production time", baseline: "2 days", target: "2 hrs", pct: 1.0, current: "90 min — exceeded" }
+    ],
+    expansion: ["Team-level workspaces for 8 franchises in discussion"],
+    notes: "Model account — fastest onboarding in the portfolio, champion presents us internally."
+  },
+  {
+    name: "Broadcast One Sports", type: "Broadcaster", stage: "Steady state", arr: 265000,
+    renewal: "2026-12-20", seats: 75, wau: 66,
+    integrations: ["Broadcast transcode", "Live ingest", "Cloud storage (BYO)", "Premiere Pro", "Stats feed"],
+    milestonesOnTime: 0.9, trend30: 6,    champion: "engaged", lastQBR: 48, upsellDuringImpl: false,
+    csmSentiment: 4, escalation: null, atRiskRenewal: false, accent: "#ff7a9c",
+    commSignals: [
+      { source: "Slack", polarity: 0, when: "5d ago", text: "Engineering lead asked about API rate limits for second production hub — routed to solutions engineering." }
+    ],
+    goals: [
+      { name: "Archive pull time for live broadcast", baseline: "15 min", target: "< 1 min", pct: 0.85, current: "90 sec" }
+    ],
+    expansion: ["Second production hub (West Coast) evaluating — would double seat count"],
+    notes: "Most technically demanding account; engineering-led relationship, deeply integrated."
+  },
+  {
+    name: "Pro Volleyball Tour", type: "League", stage: "Steady state", arr: 150000,
+    renewal: "2026-07-25", seats: 35, wau: 19,
+    integrations: ["Social publishing"],
+    milestonesOnTime: 0.6, trend30: -18,    champion: "vacant", lastQBR: 160, upsellDuringImpl: false,
+    csmSentiment: 2, escalation: null, atRiskRenewal: true, accent: "#e0e07a",
+    commSignals: [
+      { source: "Email", polarity: -1, when: "14d ago", text: "Ops manager (interim contact): “Leadership is reviewing all software spend before next season.”" }
+    ],
+    goals: [],
+    expansion: [],
+    notes: "Renewal in 44 days, flagged at-risk in forecast. Smallest account, weakest signals. Save play or controlled sunset?"
+  }
+];
+
+// ---- scoring model (computed, not hardcoded) ----
+function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+
+function scoreAccount(a) {
+  const adoption = clamp(a.wau / a.seats / 0.85, 0, 1);               // 85%+ WAU/seats = full marks
+  const integration = clamp(a.integrations.length / 4, 0, 1);          // 4+ active integrations = full marks
+  const milestones = clamp(a.milestonesOnTime, 0, 1);
+
+  const trend = clamp((a.trend30 + 40) / 60, 0, 1);                    // -40% = 0, +20% = 1
+
+  const champMap = { engaged: 1, transitioning: 0.5, vacant: 0 };
+  const qbr = a.lastQBR <= 60 ? 1 : a.lastQBR <= 100 ? 0.6 : 0.2;
+  const relationship = (champMap[a.champion] + qbr) / 2;
+
+  // sentiment: manual CSM rating (1-5) + communication signals from Gong / email / Slack
+  let sentiment = (a.csmSentiment - 1) / 4 * 0.7
+    + clamp(a.commSignals.reduce((s, c) => s + c.polarity, 0) * 0.12, -0.3, 0.3) + 0.3;
+  sentiment = clamp(sentiment, 0, 1);
+  if (a.escalation && a.escalation.open) sentiment = Math.min(sentiment, 0.15);
+
+  const expansion = (a.upsellDuringImpl ? 0.6 : 0) + (a.expansion.length > 0 ? 0.4 : 0);
+
+  const components = [
+    { name: "Workflow adoption",            weight: 20, val: adoption },
+    { name: "Integration depth",            weight: 15, val: integration },
+    { name: "Onboarding milestones",        weight: 10, val: milestones },
+    { name: "Usage trend (30d vs prior qtr)", weight: 15, val: trend },
+    { name: "Relationship strength",        weight: 15, val: relationship },
+    { name: "Sentiment & communications",   weight: 15, val: sentiment },
+    { name: "Expansion signal",             weight: 10, val: expansion }
+  ];
+  let total = Math.round(components.reduce((s, c) => s + c.weight * c.val, 0));
+
+  // override-to-red: open escalation or at-risk renewal forecast caps the score,
+  // no matter how good the usage data looks
+  let overridden = false;
+  if ((a.escalation && a.escalation.open) || a.atRiskRenewal) {
+    if (total > 45) { total = 45; }
+    overridden = true;
+  }
+  return { total, components, overridden };
+}
+
+function band(score) {
+  if (score >= 75) return { key: "healthy", label: "Healthy", cls: "s-healthy", color: "var(--green)" };
+  if (score >= 50) return { key: "watch", label: "Watch", cls: "s-watch", color: "var(--amber)" };
+  return { key: "risk", label: "At Risk", cls: "s-risk", color: "var(--red)" };
+}
+
+function daysToRenewal(a) {
+  return Math.round((new Date(a.renewal) - TODAY) / 86400000);
+}
+
+// ---- automated triggers ----
+function accountTriggers(a, s) {
+  const out = [];
+  const d = daysToRenewal(a);
+  if (a.escalation && a.escalation.open)
+    out.push({ rule: "Escalation opened", sev: "high", what: `${a.escalation.reason} — owner: ${a.escalation.owner} · status: ${ESC_STAGES[a.escalation.stageIdx]}`, to: ["CSM", "VP CS"], when: a.escalation.opened });
+  if (a.champion === "vacant")
+    out.push({ rule: "Champion change", sev: "high", what: "No active champion on the account — adoption has no internal owner.", to: ["CSM", "VP CS"], when: "5d ago" });
+  if (a.champion === "transitioning")
+    out.push({ rule: "Champion change", sev: "med", what: "Champion transitioning — new stakeholder identified, re-onboarding play queued.", to: ["CSM"], when: "12d ago" });
+  if (a.trend30 <= -15)
+    out.push({ rule: "Engagement drop", sev: "high", what: `Usage down ${Math.abs(a.trend30)}% in 30 days.`, to: ["CSM", "VP CS"], when: "3d ago" });
+  if (a.atRiskRenewal)
+    out.push({ rule: "Renewal forecast: at risk", sev: "high", what: `Renewal in ${d} days flagged at-risk — score overridden to red.`, to: ["CSM", "VP CS"], when: "14d ago" });
+  else if (d <= 120 && s.total < 75)
+    out.push({ rule: "Renewal exposure", sev: "med", what: `Renewal in ${d} days with score ${s.total} — exec touchpoint required before commercial conversation.`, to: ["CSM", "VP CS"], when: "2d ago" });
+  if (a.commSignals.some(c => c.polarity < 0))
+    out.push({ rule: "Negative comm signal", sev: "med", what: "Negative sentiment detected in " + a.commSignals.filter(c => c.polarity < 0).map(c => c.source).join(" + ") + " — flagged for CSM review.", to: ["CSM"], when: "8d ago" });
+  if (a.onboarding && a.onboarding.plan.some(m => m.status === "late"))
+    out.push({ rule: "Onboarding milestone overdue", sev: "high", what: "Milestones past target date — time-to-value decay is the earliest churn predictor.", to: ["CSM", "VP CS"], when: "11d ago" });
+  if (a.onboarding && a.onboarding.progress >= 0.5 && a.onboarding.status === "On track")
+    out.push({ rule: "Midway report sent", sev: "auto", what: "Onboarding crossed 50% — midway progress report auto-sent to champion, exec sponsor, CSM & VP.", to: ["Auto"], when: "4d ago" });
+  return out;
+}
+
+function flags(a, s) {
+  const out = [];
+  if (s.overridden) out.push({ hard: true, text: (a.escalation && a.escalation.open ? "Open escalation" : "At-risk renewal forecast") + " — score overridden to red regardless of usage data. Good telemetry never outranks a human waving a red flag." });
+  if (a.champion === "vacant") out.push({ hard: true, text: "Champion vacant — no internal owner driving adoption. Root cause of most 'surprise' churn." });
+  if (a.champion === "transitioning") out.push({ hard: false, text: "Champion transitioning — new stakeholder needs re-onboarding and a win in their first 60 days." });
+  if (a.trend30 <= -15) out.push({ hard: true, text: `Usage down ${Math.abs(a.trend30)}% in 30 days — sustained decline is the earliest churn signal there is.` });
+  if (a.milestonesOnTime < 0.7) out.push({ hard: true, text: "Onboarding milestones slipping — time-to-value decay is the earliest churn predictor." });
+  if (a.lastQBR > 100) out.push({ hard: false, text: `No executive business review in ${a.lastQBR} days.` });
+  const d = daysToRenewal(a);
+  if (d <= 120 && s.total < 75 && !s.overridden) out.push({ hard: true, text: `Renewal in ${d} days with a score of ${s.total} (${band(s.total).label}) — escalate now, not at T-30.` });
+  return out;
+}
+
+function actions(a, s) {
+  const out = [];
+  if (a.escalation && a.escalation.open) out.push(`Escalation play (owner: ${a.escalation.owner}): ${a.escalation.nextStep || "joint response within 24h; recovery plan with named owner and dates."}`);
+  if (a.champion === "vacant") out.push("Run champion-rebuild play: map the org, identify 2 candidate champions, get exec sponsor to nominate an owner.");
+  if (a.champion === "transitioning") out.push("Schedule 1:1 onboarding with incoming stakeholder; deliver a quick win in their first 30 days.");
+  if (a.trend30 <= -15) out.push("Pull usage by department — find where the drop is concentrated before the next call, not on it.");
+  if (a.milestonesOnTime < 0.7) out.push("Reset onboarding plan with dates and owners; send weekly progress report to all stakeholders.");
+  if (a.lastQBR > 100) out.push("Book executive business review within 3 weeks; lead with their content output metrics, not product updates.");
+  if (a.integrations.length <= 1) out.push("Integration audit: workflow adoption is shallow — one integration live means the platform isn't yet embedded in their pipeline.");
+  if (a.goals.some(g => g.pct >= 1)) out.push("Outcome achieved — capture as case study / reference; bring the number to the renewal conversation.");
+  a.expansion.forEach(e => out.push("Expansion play: " + e));
+  if (out.length === 0) out.push("Maintain cadence; capture as reference story / case study candidate.");
+  return out;
+}
+
+// ---- render ----
+const fmtARR = n => "$" + (n >= 1000000 ? (n/1000000).toFixed(2) + "M" : Math.round(n/1000) + "K");
+let filter = "all", sortKey = "score-asc";
+let openAccountName = null;
+let escFormVisible = false;
+
+function refresh() {
+  render();
+  if (openAccountName) {
+    const a = accounts.find(x => x.name === openAccountName);
+    const sc = document.getElementById("drawer").scrollTop;
+    openDrawer(a, scoreAccount(a));
+    document.getElementById("drawer").scrollTop = sc;
+  }
+}
+
+function render() {
+  const enriched = accounts.map(a => ({ a, s: scoreAccount(a) }));
+
+  // KPIs
+  const totARR = enriched.reduce((s, e) => s + e.a.arr, 0);
+  const wHealth = Math.round(enriched.reduce((s, e) => s + e.s.total * e.a.arr, 0) / totARR);
+  const r120 = enriched.filter(e => daysToRenewal(e.a) <= 120);
+  const r120NotHealthy = r120.filter(e => e.s.total < 75).length;
+  const riskAccts = enriched.filter(e => e.s.total < 50);
+  const escCount = enriched.filter(e => e.a.escalation && e.a.escalation.open).length;
+  document.getElementById("kpi-arr").textContent = fmtARR(totARR);
+  document.getElementById("kpi-accounts").textContent = enriched.length + " enterprise accounts";
+  const kh = document.getElementById("kpi-health");
+  kh.textContent = wHealth;
+  kh.className = "value " + band(wHealth).key.replace("healthy","green").replace("watch","amber").replace("risk","red");
+  document.getElementById("kpi-renewals").textContent = r120.length;
+  document.getElementById("kpi-renewals-note").textContent = fmtARR(r120.reduce((s,e)=>s+e.a.arr,0)) + " ARR · " + r120NotHealthy + " below healthy";
+  document.getElementById("kpi-risk").textContent = riskAccts.length + " of " + enriched.length;
+  document.getElementById("kpi-risk-note").textContent = fmtARR(riskAccts.reduce((s,e)=>s+e.a.arr,0)) + " ARR scoring below 50";
+  const ke = document.getElementById("kpi-esc");
+  ke.textContent = escCount;
+  ke.className = "value " + (escCount > 0 ? "red" : "green");
+
+  // trigger feed
+  const allTrigs = [];
+  enriched.forEach(({ a, s }) => accountTriggers(a, s).forEach(t => allTrigs.push({ ...t, account: a.name })));
+  const sevRank = { high: 0, med: 1, auto: 2 };
+  allTrigs.sort((x, y) => sevRank[x.sev] - sevRank[y.sev]);
+  document.getElementById("trigger-count").textContent = allTrigs.length;
+  document.getElementById("trigger-body").innerHTML = allTrigs.map(t => `
+    <div class="trig">
+      <span class="dot">${t.sev === "high" ? "🔴" : t.sev === "med" ? "🟡" : "🔵"}</span>
+      <span class="rule">${t.rule}</span>
+      <span class="acct" data-acct="${t.account}">${t.account}</span>
+      <span class="what">${t.what}</span>
+      <span class="to">${t.to.map(r => `<span class="pill ${r === "VP CS" ? "vp" : r === "Auto" ? "auto" : ""}">${r === "Auto" ? "automated" : "→ " + r}</span>`).join("")}<span class="pill">${t.when}</span></span>
+    </div>`).join("");
+  document.querySelectorAll(".trig .acct").forEach(el => {
+    el.onclick = () => {
+      const a = accounts.find(x => x.name === el.dataset.acct);
+      openDrawer(a, scoreAccount(a));
+    };
+  });
+
+  // list
+  let list = enriched.filter(e =>
+    filter === "all" ? true :
+    filter === "onboarding" ? e.a.stage === "Onboarding" :
+    filter === "renewal120" ? daysToRenewal(e.a) <= 120 :
+    filter === "escalated" ? (e.a.escalation && e.a.escalation.open) :
+    band(e.s.total).key === filter);
+  const sorts = {
+    "score-asc":  (x, y) => x.s.total - y.s.total,
+    "score-desc": (x, y) => y.s.total - x.s.total,
+    "arr-desc":   (x, y) => y.a.arr - x.a.arr,
+    "renewal-asc":(x, y) => daysToRenewal(x.a) - daysToRenewal(y.a)
+  };
+  list.sort(sorts[sortKey]);
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  list.forEach(({ a, s }) => {
+    const b = band(s.total);
+    const d = daysToRenewal(a);
+    const tcls = a.trend30 > 3 ? "trend-up" : a.trend30 < -3 ? "trend-down" : "trend-flat";
+    const tarrow = a.trend30 > 3 ? "▲" : a.trend30 < -3 ? "▼" : "—";
+    const el = document.createElement("div");
+    el.className = "account";
+    el.innerHTML = `
+      <div class="cell always"><div class="name">${a.name}${a.stage === "Onboarding" ? '<span class="stage-tag">onboarding ' + Math.round(a.onboarding.progress * 100) + '%</span>' : ""}${s.overridden ? '<span class="override-tag">override</span>' : ""}</div>
+        <div class="type">${a.type} · ${a.integrations.length} integration${a.integrations.length === 1 ? "" : "s"} active</div></div>
+      <div class="cell"><div class="cl">ARR</div><div class="cv">${fmtARR(a.arr)}</div></div>
+      <div class="cell"><div class="cl">Renewal</div><div class="cv">${d} days</div></div>
+      <div class="cell"><div class="cl">Adoption</div><div class="cv">${Math.round(a.wau / a.seats * 100)}% WAU</div></div>
+      <div class="cell"><div class="cl">Usage 30d</div><div class="cv ${tcls}">${tarrow} ${Math.abs(a.trend30)}%</div></div>
+      <div class="score-pill ${b.cls}">${s.total}<span class="band">${b.label}</span></div>
+    `;
+    el.onclick = () => openDrawer(a, s);
+    grid.appendChild(el);
+  });
+}
+
+// ---- interactive sentiment & escalations ----
+function setSentiment(name, v) {
+  const a = accounts.find(x => x.name === name);
+  a.csmSentiment = v;
+  refresh();
+}
+
+function sentimentDots(a) {
+  let h = "";
+  for (let i = 1; i <= 5; i++)
+    h += `<span class="sdot ${i <= a.csmSentiment ? "on" + a.csmSentiment : ""}" onclick="setSentiment('${a.name}', ${i})" title="Set sentiment to ${i}">${i <= a.csmSentiment ? "●" : i}</span>`;
+  return h;
+}
+
+function toggleEscForm() { escFormVisible = !escFormVisible; refresh(); }
+
+function createEscalation(name) {
+  const a = accounts.find(x => x.name === name);
+  a.escalation = {
+    open: true,
+    reason: document.getElementById("esc-reason").value,
+    owner: document.getElementById("esc-owner").value,
+    note: document.getElementById("esc-note").value || "(no notes added)",
+    opened: "today", stageIdx: 0,
+    nextStep: "Owner responds within 24h; recovery plan with named owner and dates."
+  };
+  escFormVisible = false;
+  refresh();
+}
+
+function advanceEsc(name) {
+  const a = accounts.find(x => x.name === name);
+  if (a.escalation.stageIdx < ESC_STAGES.length - 1) { a.escalation.stageIdx++; refresh(); }
+}
+
+function resolveEsc(name) {
+  const a = accounts.find(x => x.name === name);
+  a.escalation = null;
+  refresh();
+}
+
+function escalationSection(a) {
+  if (a.escalation && a.escalation.open) {
+    const e = a.escalation;
+    return `
+      <div class="esc-card">
+        <div class="erow"><span class="ereason">⚠ ${e.reason}</span><span class="ewhen">opened ${e.opened}</span></div>
+        <div class="enote">${e.note}</div>
+        <div class="esc-stages">
+          ${ESC_STAGES.map((s, i) => `${i > 0 ? '<span class="esc-connector"></span>' : ""}<span class="esc-stage ${i < e.stageIdx ? "donee" : i === e.stageIdx ? "activee" : ""}"><span class="sd"></span>${s}</span>`).join("")}
+        </div>
+        <div class="emeta">
+          <div class="em"><div class="el">Escalation owner</div><div class="ev">${e.owner}</div></div>
+          <div class="em"><div class="el">Next step</div><div class="ev">${e.nextStep}</div></div>
+        </div>
+        <div class="esc-ownership">How ownership works: the <b>owner</b> drives the recovery play. The CSM stays the customer's day-to-day contact; VP CS is accountable until resolved. Both were alerted automatically when this opened.</div>
+        <div class="dbuttons" style="margin-bottom:0">
+          ${a.escalation.stageIdx < ESC_STAGES.length - 1 ? `<button class="dbtn" onclick="advanceEsc('${a.name}')">Advance stage →</button>` : ""}
+          <button class="dbtn subtle" onclick="resolveEsc('${a.name}')">✓ Mark resolved</button>
+        </div>
+      </div>`;
+  }
+  if (escFormVisible) {
+    return `
+      <div class="esc-form">
+        <div><label>Reason</label><select id="esc-reason">${ESC_REASONS.map(r => `<option>${r}</option>`).join("")}</select></div>
+        <div><label>Escalation owner</label><select id="esc-owner">${ESC_OWNERS.map(r => `<option>${r}</option>`).join("")}</select></div>
+        <div><label>Notes (what happened?)</label><textarea id="esc-note" placeholder="e.g. Champion's boss raised tool consolidation on today's call…"></textarea></div>
+        <div class="dbuttons" style="margin-bottom:0">
+          <button class="dbtn danger" onclick="createEscalation('${a.name}')">⚠ Open escalation — alerts CSM + VP CS</button>
+          <button class="dbtn subtle" onclick="toggleEscForm()">Cancel</button>
+        </div>
+      </div>`;
+  }
+  return `<div class="dbuttons" style="margin-bottom:6px"><button class="dbtn danger" onclick="toggleEscForm()">⚠ Open escalation…</button></div>
+    <div class="shint">No open escalation. Opening one alerts CSM + VP CS immediately and overrides the score to red until resolved.</div>`;
+}
+
+function openDrawer(a, s) {
+  openAccountName = a.name;
+  const b = band(s.total);
+  const d = daysToRenewal(a);
+  const fl = flags(a, s);
+  const ac = actions(a, s);
+  const trigs = accountTriggers(a, s);
+  const drawer = document.getElementById("drawer");
+  drawer.innerHTML = `
+    <button class="close" onclick="closeDrawer()">×</button>
+    <h2>${a.name}</h2>
+    <div class="dtype">${a.type} · ${a.stage} · ${fmtARR(a.arr)} ARR · renewal in ${d} days</div>
+    <div class="dscore">
+      <div class="big" style="color:${b.color}">${s.total}</div>
+      <div class="meta"><b style="color:${b.color}">${b.label}${s.overridden ? " (overridden)" : ""}</b><br>${a.notes}</div>
+    </div>
+    ${a.onboarding ? `<div class="dbuttons">
+      <button class="dbtn" onclick="openPlan('${a.name}')">📋 Customer project plan</button>
+      <button class="dbtn" onclick="openMidway('${a.name}')">📨 Midway progress report</button>
+    </div>` : ""}
+    <div class="dsection">
+      <h3>Escalation</h3>
+      ${escalationSection(a)}
+    </div>
+    <div class="dsection">
+      <h3>Score breakdown</h3>
+      ${s.components.map(c => `
+        <div class="comp">
+          <div class="crow"><span class="cname">${c.name}</span><span class="cpts">${Math.round(c.val * c.weight)} / ${c.weight}</span></div>
+          <div class="bar"><i style="width:${Math.round(c.val * 100)}%; background:${c.val >= 0.7 ? "var(--green)" : c.val >= 0.4 ? "var(--amber)" : "var(--red)"}"></i></div>
+        </div>`).join("")}
+      ${s.overridden ? `<div class="comp"><div class="crow"><span class="cname" style="color:var(--red)">Override rule applied — score capped at 45</span></div></div>` : ""}
+    </div>
+    <div class="dsection">
+      <h3>Sentiment &amp; communications</h3>
+      <div class="sentiment-row"><span class="slabel">CSM sentiment (manual):</span>${sentimentDots(a)}</div>
+      <div class="shint">Click to adjust — the score recalculates instantly. This is the human judgment telemetry can't replace.</div>
+      ${a.commSignals.length ? a.commSignals.map(c => `
+        <div class="sig ${c.polarity > 0 ? "pos" : c.polarity < 0 ? "neg" : ""}">
+          <div class="sigtop"><span class="src ${c.source.toLowerCase()}">${c.source}</span><span class="when">${c.when}</span></div>
+          <div class="stext">${c.text}</div>
+        </div>`).join("") : `<div class="sig"><div class="stext" style="color:var(--muted)">No communication signals in the last 30 days — itself a signal.</div></div>`}
+    </div>
+    ${a.goals.length ? `<div class="dsection">
+      <h3>Business outcomes (agreed at kickoff)</h3>
+      ${a.goals.map(g => `
+        <div class="goal">
+          <div class="grow"><span class="gname">${g.name}</span><span class="gnums">${g.baseline} → <b style="color:var(--text)">${g.current}</b> (target ${g.target})</span></div>
+          <div class="bar"><i style="width:${Math.round(clamp(g.pct,0,1) * 100)}%; background:${g.pct >= 0.8 ? "var(--green)" : g.pct >= 0.4 ? "var(--amber)" : "var(--red)"}"></i></div>
+        </div>`).join("")}
+    </div>` : ""}
+    ${trigs.length ? `<div class="dsection"><h3>Triggers fired (7d)</h3>${trigs.map(t => `
+      <div class="trigrow"><span><b>${t.rule}</b> — ${t.what}</span>
+      <span class="to">${t.to.map(r => `<span class="pill ${r === "VP CS" ? "vp" : r === "Auto" ? "auto" : ""}">${r === "Auto" ? "automated" : "→ " + r}</span>`).join("")}</span></div>`).join("")}</div>` : ""}
+    ${fl.length ? `<div class="dsection"><h3>Risk signals</h3>${fl.map(f => `<div class="flag${f.hard ? "" : " soft"}"><span>${f.text}</span></div>`).join("")}</div>` : ""}
+    ${a.expansion.length ? `<div class="dsection"><h3>Expansion signals</h3>${a.expansion.map(e => `<div class="opp"><span>${e}</span></div>`).join("")}</div>` : ""}
+    <div class="dsection"><h3>Recommended plays</h3>${ac.map(x => `<div class="action"><span>${x}</span></div>`).join("")}</div>
+    <div class="dsection">
+      <h3>Account facts</h3>
+      <div class="facts">
+        <div class="fact"><div class="fl">Seats / WAU</div><div class="fv">${a.seats} / ${a.wau}</div></div>
+        <div class="fact"><div class="fl">Champion</div><div class="fv" style="text-transform:capitalize">${a.champion}</div></div>
+        <div class="fact"><div class="fl">Last exec review</div><div class="fv">${a.lastQBR} days ago</div></div>
+        <div class="fact"><div class="fl">Expanded during impl.</div><div class="fv">${a.upsellDuringImpl ? "Yes" : "No"}</div></div>
+      </div>
+    </div>
+    <div class="dsection">
+      <h3>Active integrations</h3>
+      <div class="chips">${a.integrations.map(i => `<span class="chip">${i}</span>`).join("")}</div>
+    </div>
+  `;
+  drawer.classList.add("open");
+  document.getElementById("overlay").classList.add("open");
+}
+
+function closeDrawer() {
+  openAccountName = null;
+  escFormVisible = false;
+  document.getElementById("drawer").classList.remove("open");
+  document.getElementById("overlay").classList.remove("open");
+}
+
+// ---- modals: project plan / midway report / methodology ----
+function showModal(html) {
+  document.getElementById("modal-content").innerHTML = `<button class="close" onclick="hideModal()">×</button>` + html;
+  document.getElementById("modal-bg").classList.add("open");
+}
+function hideModal() { document.getElementById("modal-bg").classList.remove("open"); }
+
+const stMap = { done: ["st-done", "Complete"], prog: ["st-prog", "In progress"], up: ["st-up", "Upcoming"], late: ["st-late", "Overdue"] };
+
+function initials(name) {
+  return name.split(" ").filter(w => w[0] === w[0].toUpperCase()).map(w => w[0]).slice(0, 3).join("");
+}
+function slug(name) { return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
+
+function planURL(name) {
+  return location.href.split("#")[0] + "#plan=" + slug(name);
+}
+
+function copyPlanLink(name) {
+  const url = planURL(name);
+  try { navigator.clipboard.writeText(url); } catch (e) {}
+  const btn = document.getElementById("plan-link-btn");
+  btn.textContent = "✓ Link copied — works in any browser";
+  btn.disabled = true;
+}
+
+function planBodyHTML(a) {
+  const o = a.onboarding;
+  const phases = [];
+  o.plan.forEach(m => {
+    let ph = phases.find(p => p.name === m.phase);
+    if (!ph) { ph = { name: m.phase, items: [] }; phases.push(ph); }
+    ph.items.push(m);
+  });
+  return `
+    <div class="progress-line">
+      <div class="bar"><i style="width:${Math.round(o.progress * 100)}%; background:${a.accent}"></i></div>
+      <span class="pct">${Math.round(o.progress * 100)}% · <span style="color:${o.status === "On track" ? "var(--green)" : "var(--red)"}">${o.status}</span></span>
+    </div>
+    ${a.goals.length ? `<div class="goal-cards">${a.goals.map(g => `<div class="goal-card"><div class="gc-name">${g.name}</div><div class="gc-val">${g.baseline} → ${g.target}</div></div>`).join("")}</div>` : ""}
+    ${phases.map(ph => {
+      const done = ph.items.filter(i => i.status === "done").length;
+      return `
+      <div class="tl-phase"><span class="ph" style="color:${a.accent}">${ph.name}</span><span class="ph-count">${done}/${ph.items.length} complete</span></div>
+      <div class="tl-rows">
+        ${ph.items.map(m => `
+          <div class="tl-row ${m.status}">
+            <span class="tl-dot">${m.status === "done" ? "✓" : m.status === "late" ? "!" : ""}</span>
+            <span class="tl-name">${m.milestone}</span>
+            <span class="tl-owner ${m.owner === "Customer" ? "cust" : ""}">${m.owner}</span>
+            <span class="tl-date">${m.status === "late" ? "⚠ was " : ""}${m.target}</span>
+            <span class="status-chip ${stMap[m.status][0]}">${stMap[m.status][1]}</span>
+          </div>`).join("")}
+      </div>`;
+    }).join("")}`;
+}
+
+function openPlan(name) {
+  const a = accounts.find(x => x.name === name);
+  const o = a.onboarding;
+  showModal(`
+    <div class="plan-head">
+      <div class="logo" style="background:${a.accent}">${initials(a.name)}</div>
+      <div class="pt"><h2>${a.name}</h2><div class="psub">Onboarding plan · kickoff ${o.kickoff} · target go-live ${o.targetGoLive}</div></div>
+      <span class="cust-badge">👁 Customer-facing view</span>
+    </div>
+    ${planBodyHTML(a)}
+    <div class="modal-actions">
+      <button class="dbtn" id="plan-link-btn" onclick="copyPlanLink('${a.name}')">🔗 Copy customer link</button>
+      <a class="dbtn" href="${planURL(name)}" target="_blank" style="text-decoration:none">↗ Open customer view</a>
+      <span class="shint" style="align-self:center">A real link — opens this file as a standalone customer page, no login. In production: a shared ScorePlay portal page on your domain.</span>
+    </div>
+    <p class="m" style="margin-top:10px">Both sides see the same plan — including which milestones are owned by the customer (gold tags). Shared visibility is what keeps onboarding honest: when a customer-owned milestone slips, the conversation happens at the milestone, not at the renewal.</p>
+  `);
+}
+
+// standalone customer page — rendered when the URL contains #plan=<account>
+function renderCustomerPlanPage(a) {
+  const o = a.onboarding;
+  document.title = a.name + " — Onboarding Plan";
+  document.querySelector(".wrap").innerHTML = `
+    <div class="cust-banner"><span class="dot-live"></span> Live onboarding plan · shared with ${a.name} by your ScorePlay Customer Success team · always shows current status</div>
+    <div class="plan-head">
+      <div class="logo" style="background:${a.accent}">${initials(a.name)}</div>
+      <div class="pt"><h2>${a.name}</h2><div class="psub">Onboarding plan · kickoff ${o.kickoff} · target go-live ${o.targetGoLive}</div></div>
+    </div>
+    ${planBodyHTML(a)}
+    <div class="cust-footer">
+      Questions or schedule changes? Contact your ScorePlay Customer Success team — we review this plan together on our weekly call.<br><br>
+      <a href="${location.href.split("#")[0]}" style="color:var(--blue)">← back to internal dashboard (demo navigation — a customer would never see this link)</a>
+    </div>
+  `;
+}
+
+function sendMidway(name) {
+  const btn = document.getElementById("send-midway");
+  btn.textContent = "✓ Sent — emailed to champion, exec sponsor, CSM & VP CS · logged to account timeline (demo)";
+  btn.disabled = true;
+}
+
+function openMidway(name) {
+  const a = accounts.find(x => x.name === name);
+  const o = a.onboarding;
+  const done = o.plan.filter(m => m.status === "done");
+  const next = o.plan.filter(m => m.status !== "done");
+  const onTrack = o.status === "On track";
+  showModal(`
+    <h2>📨 Midway Progress Report — ${a.name}</h2>
+    <div class="report-meta"><b>How it sends:</b> auto-fires when onboarding crosses 50% of plan — or send manually below, any time. Recipients: <b>champion</b>, <b>exec sponsor</b>, <b>CSM</b>, <b>VP Customer Success</b> · cc account team · delivered by email, logged to the account.</div>
+    <div class="progress-line">
+      <div class="bar"><i style="width:${Math.round(o.progress * 100)}%; background:${onTrack ? "var(--green)" : "var(--amber)"}"></i></div>
+      <span class="pct" style="color:${onTrack ? "var(--green)" : "var(--amber)"}">${Math.round(o.progress * 100)}% · ${o.status}</span>
+    </div>
+    <p><b>Where we are.</b> ${done.length} of ${o.plan.length} milestones complete. ${onTrack
+      ? `Tracking to go-live on ${o.targetGoLive}.`
+      : `Two milestones are past target — go-live date of ${o.targetGoLive} is at risk without action on the items below.`}</p>
+    <table>
+      <tr><th>Completed</th><th></th></tr>
+      ${done.map(m => `<tr><td>${m.milestone}</td><td><span class="status-chip st-done">✓ ${m.target}</span></td></tr>`).join("")}
+    </table>
+    <table>
+      <tr><th>Up next</th><th>Owner</th><th>Target</th></tr>
+      ${next.slice(0, 4).map(m => `<tr><td>${m.milestone}</td><td>${m.owner}</td><td><span class="status-chip ${stMap[m.status][0]}">${m.status === "late" ? "OVERDUE — was " : ""}${m.target}</span></td></tr>`).join("")}
+    </table>
+    <p><b>Adoption so far.</b> ${a.wau} of ${a.seats} licensed users active in the last 30 days${a.upsellDuringImpl ? " — and the account has already expanded during onboarding, historically the strongest renewal predictor we track" : ""}.</p>
+    ${a.goals.length ? `<p><b>Against your goals.</b> ${a.goals.map(g => `${g.name}: ${g.baseline} → ${g.current} (target: ${g.target})`).join(" · ")}</p>` : ""}
+    <p><b>${onTrack ? "What we need from you" : "Where we need help"}.</b> ${onTrack
+      ? "Confirm training cohort attendees by Friday; nothing else blocking."
+      : "The overdue milestones are customer-owned — we need a named owner this week or the go-live moves. Your CSM and our VP of Customer Success have both been alerted and will propose a recovery plan on Thursday's call."}</p>
+    <div class="modal-actions">
+      <button class="dbtn" id="send-midway" onclick="sendMidway('${a.name}')">📤 Send report now</button>
+    </div>
+    <p class="m">Why this report exists: halfway is the last cheap moment to fix an onboarding. Every stakeholder — on both sides — sees the same status, the same owners, and the same dates. Nobody gets to be surprised at go-live.</p>
+  `);
+}
+
+function openMethodology() {
+  showModal(`
+    <h2>Why these signals?</h2>
+    <p>Most health scores are lagging — they tell you a customer is unhappy after it's too late to act. This model weights <b>leading indicators</b>: signals that, in my experience managing an enterprise DAM portfolio, predicted renewal outcomes months in advance.</p>
+    <table>
+      <tr><th>Component</th><th>Weight</th><th>Rationale</th></tr>
+      <tr><td>Workflow adoption</td><td class="w">20</td><td>Weekly active users vs. licensed seats. Stickiness comes from daily workflow embedding, not logins after a reminder email.</td></tr>
+      <tr><td>Integration depth</td><td class="w">15</td><td>The strongest renewal predictor in my prior portfolio: customers actively using integrations (creative tools, publishing, data) had embedded the platform into their pipeline. Churn requires unwinding workflows, not just canceling a contract.</td></tr>
+      <tr><td>Onboarding milestones</td><td class="w">10</td><td>Customers who hit onboarding milestones on time renewed at meaningfully higher rates. Time-to-value decay in the first 90 days is the earliest churn signal that exists.</td></tr>
+      <tr><td>Usage trend</td><td class="w">15</td><td>30-day usage vs. prior quarter. These organizations create campaigns year-round, busy season or not — so a sustained usage decline is never "just the off-season." It's the earliest quantitative churn signal there is.</td></tr>
+      <tr><td>Relationship strength</td><td class="w">15</td><td>Champion status + executive cadence. Champion departure is the single most common root cause behind "surprise" churn — it should never be a surprise.</td></tr>
+      <tr><td>Sentiment &amp; communications</td><td class="w">15</td><td>A manual CSM sentiment rating — the human override telemetry can't replace — combined with signals mined from Gong call summaries, email threads, and shared Slack channels. A customer can look healthy in usage data while telling you on a call that they're consolidating tools. The model should hear that.</td></tr>
+      <tr><td>Expansion signal</td><td class="w">10</td><td>In my prior portfolio, customers who expanded during implementation renewed at ~99%. Expansion isn't just revenue — it's the strongest commitment signal a customer can send.</td></tr>
+    </table>
+    <p><b>Override rules.</b> An open escalation or an at-risk renewal forecast caps the score at red <i>regardless of points</i> — borrowed directly from the model I ran in production. Good telemetry never outranks a human waving a red flag. Escalations carry a named owner and a three-stage status (open → action plan → monitoring), so it's always clear who is driving and what happens next.</p>
+    <p><b>Beyond the score.</b> Scores that don't cause action are dashboards nobody reads. Three things fire automatically here: <b>triggers</b> (champion change, engagement drop, escalation → Slack + email to CSM and VP CS), the <b>midway progress report</b> (auto-sent to all stakeholders when onboarding crosses 50% — halfway is the last cheap moment to fix an onboarding), and a <b>customer-facing project plan</b> shared as a live link with milestone ownership on both sides, so slippage is visible at the milestone, not at the renewal.</p>
+    <p><b>Business outcomes.</b> Every account carries the goals agreed at kickoff — "post-game gallery in 30 minutes, not 4 hours" — tracked baseline → current → target. Renewals aren't defended with usage charts; they're defended with the customer's own numbers.</p>
+    <p class="m">Bands: Healthy ≥ 75 · Watch 50–74 · At Risk &lt; 50. Sentiment and escalations are editable in this demo — click around. Built as a single HTML file with Claude — the same model could run as a Claude skill over live platform usage data, HubSpot, Gong, and support history. No CS platform required.</p>
+  `);
+}
+
+function setFilter(f) {
+  filter = f;
+  document.getElementById("filters").querySelectorAll("button").forEach(x => x.classList.toggle("active", x.dataset.f === f));
+  render();
+}
+
+document.getElementById("overlay").onclick = closeDrawer;
+document.getElementById("filters").querySelectorAll("button").forEach(btn => {
+  btn.onclick = () => setFilter(btn.dataset.f);
+});
+document.getElementById("kpi-card-renewals").onclick = () => {
+  setFilter("renewal120");
+  sortKey = "renewal-asc";
+  document.getElementById("sort").value = "renewal-asc";
+  render();
+  document.getElementById("grid").scrollIntoView({ behavior: "smooth", block: "start" });
+};
+document.getElementById("kpi-card-risk").onclick = () => {
+  setFilter("risk");
+  document.getElementById("grid").scrollIntoView({ behavior: "smooth", block: "start" });
+};
+document.getElementById("kpi-card-esc").onclick = () => {
+  setFilter("escalated");
+  document.getElementById("grid").scrollIntoView({ behavior: "smooth", block: "start" });
+};
+document.getElementById("sort").onchange = e => { sortKey = e.target.value; render(); };
+document.getElementById("open-method").onclick = openMethodology;
+document.getElementById("trigger-head").onclick = () => document.getElementById("trigger-body").classList.toggle("open");
+document.getElementById("modal-bg").onclick = e => { if (e.target.id === "modal-bg") hideModal(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") { closeDrawer(); hideModal(); } });
+
+// ---- CSV import (100% client-side — no network requests, the file never leaves this browser) ----
+const SAMPLE_ACCOUNTS = accounts.slice();
+const ACCENTS = ["#7fd4ff", "#ff8a5c", "#e0a422", "#2ec5d3", "#9be07a", "#c5a6ff", "#8fd9ff", "#ffb35c", "#7affc4", "#ff7a9c", "#e0e07a"];
+
+const IMPORT_FIELDS = [
+  { key: "name", label: "Account name", required: true, aliases: ["account", "account name", "name", "company", "customer", "client"] },
+  { key: "arr", label: "ARR ($)", aliases: ["arr", "acv", "annual revenue", "amount", "annual account revenue", "total acv", "annual contract value"] },
+  { key: "renewal", label: "Renewal date", aliases: ["renewal", "renewal date", "current renewal close date", "contract end", "renewal close date", "close date"] },
+  { key: "seats", label: "Licensed seats", aliases: ["seats", "licenses", "licensed users", "power seats", "total seats", "users purchased"] },
+  { key: "wau", label: "Active users (30d)", aliases: ["wau", "active users", "weekly active users", "active users 30d", "mau", "monthly active users"] },
+  { key: "integrations", label: "Integrations (count or list)", aliases: ["integrations", "integration count", "integrations active", "active integrations"] },
+  { key: "milestonesOnTime", label: "Onboarding milestones on-time %", aliases: ["milestones", "milestones on time", "onboarding milestones", "onboarding", "milestone completion"] },
+  { key: "trend30", label: "Usage trend % (30d)", aliases: ["trend", "usage trend", "trend 30d", "usage change", "usage delta"] },
+  { key: "champion", label: "Champion status", aliases: ["champion", "champion status"] },
+  { key: "lastQBR", label: "Days since last QBR", aliases: ["last qbr", "qbr", "days since qbr", "last ebr", "last exec review", "qbr days"] },
+  { key: "csmSentiment", label: "CSM sentiment (1–5)", aliases: ["sentiment", "csm sentiment", "health sentiment"] },
+  { key: "upsellDuringImpl", label: "Expanded during implementation", aliases: ["upsell", "upsell during impl", "expanded during implementation", "upsell during implementation", "expansion closed"] },
+  { key: "type", label: "Account type", aliases: ["type", "account type", "segment", "vertical"] },
+  { key: "atRiskRenewal", label: "Renewal flagged at-risk", aliases: ["at risk", "renewal at risk", "at-risk", "renewal forecast", "forecast"] }
+];
+
+const DEFAULTS_DESC = {
+  arr: "$100K each (equal weighting)", renewal: "180 days out", seats: "50", wau: "50% of seats",
+  integrations: "2", milestonesOnTime: "85%", trend30: "flat (0%)", champion: "transitioning (neutral)",
+  lastQBR: "75 days", csmSentiment: "3 (neutral)", upsellDuringImpl: "no", type: "Account",
+  atRiskRenewal: "no"
+};
+
+function parseCSV(text) {
+  const rows = []; let row = []; let cur = ""; let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else inQ = false; }
+      else cur += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ",") { row.push(cur); cur = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        row.push(cur); cur = "";
+        if (row.some(v => v.trim() !== "")) rows.push(row);
+        row = [];
+      }
+      else cur += c;
+    }
+  }
+  row.push(cur);
+  if (row.some(v => v.trim() !== "")) rows.push(row);
+  return rows;
+}
+
+function normHeader(h) { return String(h).toLowerCase().replace(/[^a-z0-9%]+/g, " ").trim(); }
+function pNum(v) { const n = parseFloat(String(v).replace(/[^0-9.\-]/g, "")); return isNaN(n) ? null : n; }
+function pBool(v) { return /^(y|yes|true|1|x)\b/i.test(String(v).trim()); }
+
+function detectColumn(field, headers) {
+  const normed = headers.map(normHeader);
+  for (const alias of field.aliases) {
+    const i = normed.indexOf(alias);
+    if (i >= 0) return i;
+  }
+  for (const alias of field.aliases) {
+    const i = normed.findIndex(h => h.includes(alias));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+let _import = null; // { headers, rows }
+
+function openImport() {
+  showModal(`
+    <h2>📥 Import your portfolio</h2>
+    <div class="privacy-note">🔒 <b>Your data never leaves this browser.</b> This page makes no network requests — the file is read locally, scored locally, and discarded on reload. Nothing is uploaded, to anyone.</div>
+    <div class="drop-zone" id="drop-zone"><b>Drop a CSV here</b> or click to browse<br><span style="font-size:12.5px">e.g. a HubSpot account export — only an account-name column is required</span></div>
+    <input type="file" id="csv-file" accept=".csv,text/csv" style="display:none">
+    <div class="modal-actions">
+      <button class="dbtn" onclick="downloadSampleCSV()">⬇ Download sample CSV (see expected shape)</button>
+    </div>
+    <p class="m">Columns are auto-detected from common names (ARR/ACV, renewal date, seats, active users, integrations, champion status, sentiment…). Anything missing gets a clearly-reported neutral default — the model degrades gracefully rather than demanding perfect data.</p>
+  `);
+  const zone = document.getElementById("drop-zone");
+  const input = document.getElementById("csv-file");
+  zone.onclick = () => input.click();
+  zone.ondragover = e => { e.preventDefault(); zone.classList.add("drag"); };
+  zone.ondragleave = () => zone.classList.remove("drag");
+  zone.ondrop = e => { e.preventDefault(); zone.classList.remove("drag"); if (e.dataTransfer.files[0]) handleCSVFile(e.dataTransfer.files[0]); };
+  input.onchange = () => { if (input.files[0]) handleCSVFile(input.files[0]); };
+}
+
+function handleCSVFile(file) {
+  file.text().then(text => {
+    const rows = parseCSV(text);
+    if (rows.length < 2) {
+      showModal(`<h2>Couldn't read that file</h2><p>The CSV needs a header row plus at least one account row. <button class="dbtn" onclick="openImport()">Try again</button></p>`);
+      return;
+    }
+    _import = { headers: rows[0], rows: rows.slice(1) };
+    showMappingUI();
+  });
+}
+
+function showMappingUI() {
+  const { headers, rows } = _import;
+  showModal(`
+    <h2>Map your columns</h2>
+    <p class="m">Auto-detected where possible — adjust if needed. Only <b style="color:var(--text)">Account name</b> is required; unmapped fields use neutral defaults and are reported after import.</p>
+    <table class="map-table">
+      ${IMPORT_FIELDS.map(f => {
+        const det = detectColumn(f, headers);
+        return `<tr><td>${f.label}${f.required ? ' <span class="req">*</span>' : ""}</td><td><select id="map-${f.key}">
+          <option value="">— not in file —</option>
+          ${headers.map((h, i) => `<option value="${i}" ${det === i ? "selected" : ""}>${h}</option>`).join("")}
+        </select></td></tr>`;
+      }).join("")}
+    </table>
+    <div class="modal-actions">
+      <button class="dbtn" onclick="runImport()">Import ${rows.length} account${rows.length === 1 ? "" : "s"} →</button>
+      <button class="dbtn subtle" onclick="openImport()">← Back</button>
+    </div>
+  `);
+}
+
+function runImport() {
+  const { headers, rows } = _import;
+  const map = {};
+  IMPORT_FIELDS.forEach(f => {
+    const v = document.getElementById("map-" + f.key).value;
+    map[f.key] = v === "" ? -1 : parseInt(v, 10);
+  });
+  if (map.name < 0) {
+    document.querySelector(".modal h2").textContent = "Account name column is required";
+    return;
+  }
+  const get = (row, key) => map[key] >= 0 ? String(row[map[key]] ?? "").trim() : "";
+  const mapped = IMPORT_FIELDS.filter(f => map[f.key] >= 0).map(f => f.label);
+  const defaulted = IMPORT_FIELDS.filter(f => map[f.key] < 0 && !f.required).map(f => f.label + " → " + DEFAULTS_DESC[f.key]);
+  const imported = [];
+  let skipped = 0;
+
+  rows.forEach((row, idx) => {
+    const name = get(row, "name");
+    if (!name) { skipped++; return; }
+
+    const seats = pNum(get(row, "seats")) ?? 50;
+    let wau = pNum(get(row, "wau"));
+    if (wau == null) wau = Math.round(seats * 0.5);
+
+    let renewal;
+    const rRaw = get(row, "renewal");
+    const rNum = pNum(rRaw);
+    if (rRaw && isNaN(Date.parse(rRaw)) === false) renewal = new Date(Date.parse(rRaw)).toISOString().slice(0, 10);
+    else if (rNum != null && rNum < 2000) renewal = new Date(TODAY.getTime() + rNum * 86400000).toISOString().slice(0, 10);
+    else renewal = new Date(TODAY.getTime() + 180 * 86400000).toISOString().slice(0, 10);
+
+    let integrations;
+    const iRaw = get(row, "integrations");
+    if (/[;|/]/.test(iRaw)) integrations = iRaw.split(/[;|/]/).map(s => s.trim()).filter(Boolean);
+    else {
+      const n = pNum(iRaw);
+      integrations = n != null ? Array.from({ length: Math.max(0, Math.min(10, Math.round(n))) }, (_, i) => "Integration " + (i + 1)) : ["Integration 1", "Integration 2"];
+    }
+
+    let milestones = pNum(get(row, "milestonesOnTime"));
+    if (milestones == null) milestones = 0.85;
+    else if (milestones > 1.5) milestones = milestones / 100;
+    milestones = clamp(milestones, 0, 1);
+
+    const champRaw = get(row, "champion").toLowerCase();
+    const champion = /vacan|none|left|depart|gone/.test(champRaw) ? "vacant"
+      : /trans|new|chang|interim/.test(champRaw) ? "transitioning"
+      : /engag|active|strong|yes|good/.test(champRaw) ? "engaged"
+      : "transitioning";
+
+    let sentiment = pNum(get(row, "csmSentiment"));
+    sentiment = sentiment == null ? 3 : clamp(Math.round(sentiment), 1, 5);
+
+    imported.push({
+      name, type: get(row, "type") || "Account", stage: "Steady state",
+      arr: pNum(get(row, "arr")) ?? 100000,
+      renewal, seats: Math.max(1, seats), wau: Math.max(0, wau),
+      integrations,
+      milestonesOnTime: milestones,
+      trend30: clamp(pNum(get(row, "trend30")) ?? 0, -80, 80),
+      champion,
+      lastQBR: pNum(get(row, "lastQBR")) ?? 75,
+      upsellDuringImpl: map.upsellDuringImpl >= 0 ? pBool(get(row, "upsellDuringImpl")) : false,
+      csmSentiment: sentiment,
+      escalation: null,
+      atRiskRenewal: map.atRiskRenewal >= 0 ? pBool(get(row, "atRiskRenewal")) : false,
+      accent: ACCENTS[idx % ACCENTS.length],
+      commSignals: [], goals: [], expansion: [],
+      notes: "Imported from CSV — fields not in the file use neutral defaults."
+    });
+  });
+
+  if (!imported.length) {
+    showModal(`<h2>No accounts imported</h2><p>Every row was missing a value in the account-name column. <button class="dbtn" onclick="showMappingUI()">← Back to mapping</button></p>`);
+    return;
+  }
+
+  accounts.splice(0, accounts.length, ...imported);
+  closeDrawer();
+  setFilter("all");
+  const banner = document.getElementById("import-banner");
+  banner.style.display = "flex";
+  banner.innerHTML = `📂 <b>Showing your imported data</b> — ${imported.length} account${imported.length === 1 ? "" : "s"} · ${mapped.length} of ${IMPORT_FIELDS.length} signals mapped from your file · all scoring runs locally <button class="restore" onclick="restoreSample()">Restore sample portfolio</button>`;
+  render();
+  showModal(`
+    <h2>✓ Imported ${imported.length} account${imported.length === 1 ? "" : "s"}${skipped ? ` (skipped ${skipped} row${skipped === 1 ? "" : "s"} with no name)` : ""}</h2>
+    <p><b>Mapped from your file:</b> ${mapped.join(", ") || "account name only"}.</p>
+    ${defaulted.length ? `<p><b>Using neutral defaults</b> (not found in file): ${defaulted.join(" · ")}.</p>` : ""}
+    <p class="m">Defaults are deliberately neutral so they don't fake precision — an account scoring low here is low because of <i>your</i> data. Sentiment and escalations are editable per account, and every score recalculates live. Project plans and midway reports stay on the sample accounts, since they need milestone-level data a CRM export doesn't carry.</p>
+    <div class="modal-actions"><button class="dbtn" onclick="hideModal()">View portfolio →</button></div>
+  `);
+}
+
+function restoreSample() {
+  accounts.splice(0, accounts.length, ...SAMPLE_ACCOUNTS);
+  document.getElementById("import-banner").style.display = "none";
+  closeDrawer();
+  setFilter("all");
+  render();
+}
+
+function downloadSampleCSV() {
+  const header = "Account Name,Account Type,ARR,Renewal Date,Licensed Seats,Active Users (30d),Integrations,Milestones On Time %,Usage Trend % (30d),Champion Status,Days Since Last QBR,CSM Sentiment (1-5),Expanded During Implementation,Renewal At Risk";
+  const lines = SAMPLE_ACCOUNTS.map(a => [
+    `"${a.name}"`, a.type, a.arr, a.renewal, a.seats, a.wau,
+    `"${a.integrations.join("; ")}"`, Math.round(a.milestonesOnTime * 100) + "%", a.trend30 + "%",
+    a.champion, a.lastQBR, a.csmSentiment, a.upsellDuringImpl ? "yes" : "no",
+    a.atRiskRenewal ? "yes" : "no"
+  ].join(","));
+  const blob = new Blob([header + "\n" + lines.join("\n")], { type: "text/csv" });
+  const aEl = document.createElement("a");
+  aEl.href = URL.createObjectURL(blob);
+  aEl.download = "portfolio-health-sample.csv";
+  aEl.click();
+  URL.revokeObjectURL(aEl.href);
+}
+
+document.getElementById("open-import").onclick = openImport;
+
+// boot: #plan=<account-slug> renders the standalone customer page instead of the dashboard
+function boot() {
+  const m = location.hash.match(/^#plan=([a-z0-9-]+)/);
+  if (m) {
+    const a = accounts.find(x => slug(x.name) === m[1]);
+    if (a && a.onboarding) { renderCustomerPlanPage(a); return; }
+  }
+  render();
+}
+window.addEventListener("hashchange", () => location.reload());
+boot();
+</script>
+</body>
+</html>
