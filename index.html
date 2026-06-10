@@ -347,7 +347,7 @@
   <footer>
     Scores computed live from underlying inputs (see model rationale) — nothing here is hardcoded.<br>
     Sentiment and escalations are editable in this demo; changes recalculate scores instantly (and reset on reload).<br>
-    All accounts and data are fictional. Concept by Ilya Kiselev, June 2026.
+    Organization names are shown for illustration only — every metric, score, and account detail is invented sample data, not actual customer information. Concept by Ilya Kiselev, June 2026.
   </footer>
 </div>
 
@@ -365,7 +365,7 @@ const ESC_STAGES = ["Open — response due in 24h", "Action plan agreed", "Monit
 
 const accounts = [
   {
-    name: "Continental Hockey League", type: "League", stage: "Steady state", arr: 340000,
+    name: "Major League Soccer", type: "League", stage: "Steady state", arr: 340000,
     renewal: "2026-11-15", seats: 120, wau: 96,
     integrations: ["Premiere Pro", "Live ingest", "Social publishing", "Stats feed"],
     milestonesOnTime: 1.0, trend30: 9,    champion: "engaged", lastQBR: 34, upsellDuringImpl: true,
@@ -374,14 +374,14 @@ const accounts = [
       { source: "Gong", polarity: 1, when: "6d ago", text: "QBR call: VP of Content called platform “central to our matchday operation”; asked about club-level rollout pricing." }
     ],
     goals: [
-      { name: "Post-game gallery delivered to clubs", baseline: "4 hrs", target: "30 min", pct: 0.93, current: "45 min" },
+      { name: "Post-match gallery delivered to clubs", baseline: "4 hrs", target: "30 min", pct: 0.93, current: "45 min" },
       { name: "Club content requests self-served via portals", baseline: "0%", target: "80%", pct: 0.81, current: "65%" }
     ],
-    expansion: ["12 member clubs not yet on platform — ecosystem rollout opportunity", "International feeds — localization (subtitles/dubbing) for EU broadcast partners"],
-    notes: "Hybrid setup: on-prem NAS at arena synced to cloud via agent for game nights."
+    expansion: ["Member clubs not yet on platform — ecosystem rollout opportunity", "International feeds — localization (subtitles/dubbing) for global broadcast partners"],
+    notes: "Hybrid setup: on-prem NAS at the stadium synced to cloud via agent on match nights."
   },
   {
-    name: "Motor Speed Championship", type: "Competition", stage: "Steady state", arr: 400000,
+    name: "MotoGP", type: "Competition", stage: "Steady state", arr: 400000,
     renewal: "2027-02-01", seats: 85, wau: 71,
     integrations: ["FTP ingest", "Social publishing", "Cloud storage (BYO)"],
     milestonesOnTime: 0.9, trend30: 4,    champion: "engaged", lastQBR: 55, upsellDuringImpl: true,
@@ -432,7 +432,7 @@ const accounts = [
     }
   },
   {
-    name: "Pacific Surf League", type: "League", stage: "Onboarding", arr: 230000,
+    name: "Freeride World Tour", type: "Tour", stage: "Onboarding", arr: 230000,
     renewal: "2027-04-30", seats: 50, wau: 31,
     integrations: ["FTP ingest", "Social publishing", "Live ingest"],
     milestonesOnTime: 1.0, trend30: 22,    champion: "engaged", lastQBR: 18, upsellDuringImpl: true,
@@ -492,19 +492,19 @@ const accounts = [
     notes: "Usage dipping while media manager covers two roles since March — workload, not disengagement, but the effect is the same."
   },
   {
-    name: "Summit Winter Games Organization", type: "Competition", stage: "Steady state", arr: 260000,
+    name: "FISU", type: "Federation", stage: "Steady state", arr: 260000,
     renewal: "2027-01-10", seats: 150, wau: 84,
     integrations: ["Live ingest", "Broadcast transcode", "Cloud storage (BYO)", "Premiere Pro"],
     milestonesOnTime: 0.95, trend30: -7,
     champion: "engaged", lastQBR: 42, upsellDuringImpl: true,
     csmSentiment: 4, escalation: null, atRiskRenewal: false, accent: "#8fd9ff",
     commSignals: [
-      { source: "Email", polarity: 1, when: "30d ago", text: "Post-season debrief: “best media ops cycle we’ve had”; planning summer test events on platform." }
+      { source: "Email", polarity: 1, when: "30d ago", text: "Post-Games debrief: “best media ops cycle we’ve had”; planning continental championships on platform." }
     ],
     goals: [
       { name: "Accredited media asset requests fulfilled", baseline: "48 hrs", target: "instant (portal)", pct: 0.9, current: "97% via portal" }
     ],
-    expansion: ["Summer test events — year-round usage case to build before renewal"],
+    expansion: ["Continental championships — year-round usage case to build before renewal"],
     notes: "Event-based org running year-round campaign work between Games cycles; slight dip as the post-Games content wave settles."
   },
   {
@@ -521,33 +521,33 @@ const accounts = [
     notes: "Renewal in 65 days with a flat-engagement profile. Needs an executive touchpoint before paper goes out."
   },
   {
-    name: "Premier Lacrosse Circuit", type: "League", stage: "Steady state", arr: 185000,
+    name: "Brooklyn Nets", type: "Team", stage: "Steady state", arr: 185000,
     renewal: "2027-03-01", seats: 45, wau: 41,
     integrations: ["Premiere Pro", "Social publishing", "FTP ingest"],
     milestonesOnTime: 1.0, trend30: 14,    champion: "engaged", lastQBR: 21, upsellDuringImpl: true,
     csmSentiment: 5, escalation: null, atRiskRenewal: false, accent: "#7affc4",
     commSignals: [
-      { source: "Gong", polarity: 1, when: "10d ago", text: "Champion presenting platform at league all-hands; volunteered as reference for two prospects." }
+      { source: "Gong", polarity: 1, when: "10d ago", text: "Champion presenting platform at organization all-hands; volunteered as reference for two prospects." }
     ],
     goals: [
-      { name: "Weekly highlight package production time", baseline: "2 days", target: "2 hrs", pct: 1.0, current: "90 min — exceeded" }
+      { name: "Game-night gallery to players & socials", baseline: "next morning", target: "before final buzzer", pct: 1.0, current: "in-game — exceeded" }
     ],
-    expansion: ["Team-level workspaces for 8 franchises in discussion"],
+    expansion: ["G League affiliate workspace in discussion"],
     notes: "Model account — fastest onboarding in the portfolio, champion presents us internally."
   },
   {
-    name: "Broadcast One Sports", type: "Broadcaster", stage: "Steady state", arr: 265000,
+    name: "RCS Sport", type: "Media & events", stage: "Steady state", arr: 265000,
     renewal: "2026-12-20", seats: 75, wau: 66,
     integrations: ["Broadcast transcode", "Live ingest", "Cloud storage (BYO)", "Premiere Pro", "Stats feed"],
     milestonesOnTime: 0.9, trend30: 6,    champion: "engaged", lastQBR: 48, upsellDuringImpl: false,
     csmSentiment: 4, escalation: null, atRiskRenewal: false, accent: "#ff7a9c",
     commSignals: [
-      { source: "Slack", polarity: 0, when: "5d ago", text: "Engineering lead asked about API rate limits for second production hub — routed to solutions engineering." }
+      { source: "Slack", polarity: 0, when: "5d ago", text: "Engineering lead asked about API rate limits for an additional production workflow — routed to solutions engineering." }
     ],
     goals: [
       { name: "Archive pull time for live broadcast", baseline: "15 min", target: "< 1 min", pct: 0.85, current: "90 sec" }
     ],
-    expansion: ["Second production hub (West Coast) evaluating — would double seat count"],
+    expansion: ["Additional race properties evaluating — would double seat count"],
     notes: "Most technically demanding account; engineering-led relationship, deeply integrated."
   },
   {
@@ -1010,7 +1010,7 @@ function renderCustomerPlanPage(a) {
   const o = a.onboarding;
   document.title = a.name + " — Onboarding Plan";
   document.querySelector(".wrap").innerHTML = `
-    <div class="cust-banner"><span class="dot-live"></span> Live onboarding plan · shared with ${a.name} by your ScorePlay Customer Success team · always shows current status</div>
+    <div class="cust-banner"><span class="dot-live"></span> Live onboarding plan · shared with ${a.name} by your ScorePlay Customer Success team · always shows current status · illustrative demo data</div>
     <div class="plan-head">
       <div class="logo" style="background:${a.accent}">${initials(a.name)}</div>
       <div class="pt"><h2>${a.name}</h2><div class="psub">Onboarding plan · kickoff ${o.kickoff} · target go-live ${o.targetGoLive}</div></div>
